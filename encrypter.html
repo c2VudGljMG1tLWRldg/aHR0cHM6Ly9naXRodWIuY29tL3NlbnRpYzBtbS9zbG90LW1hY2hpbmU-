@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Save Encrypt / Decrypt Tool</title>
+<style>
+body {
+    font-family: Arial;
+    background: #1b1b1b;
+    color: white;
+    padding: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 140px;
+    margin-bottom: 10px;
+}
+
+button {
+    padding: 10px;
+    margin: 5px 5px 15px 0;
+    cursor: pointer;
+}
+
+pre {
+    background: black;
+    padding: 15px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+</style>
+</head>
+<body>
+
+<h2>🔐 Save Encrypt / Decrypt Tool</h2>
+
+<h3>Input</h3>
+<textarea id="input"></textarea>
+
+<br>
+
+<button onclick="encryptSave()">Encrypt</button>
+<button onclick="decryptSave()">Decrypt</button>
+
+<h3>Output</h3>
+<pre id="output">bereit...</pre>
+
+<script>
+async function sha256(text) {
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+/* 🔒 ENCRYPT */
+async function encryptSave() {
+    try {
+        const raw = document.getElementById("input").value;
+
+        const json = JSON.stringify(JSON.parse(raw)); // validieren
+        const hash = await sha256(json);
+
+        const packageData = {
+            data: btoa(json),
+            hash: hash
+        };
+
+        document.getElementById("output").textContent =
+            JSON.stringify(packageData, null, 2);
+
+    } catch (e) {
+        document.getElementById("output").textContent =
+            "❌ Fehler beim Encrypt:\n" + e;
+    }
+}
+
+async function decryptSave() {
+    try {
+        const raw = JSON.parse(document.getElementById("input").value);
+
+        const json = atob(raw.data);
+        const hash = await sha256(json);
+
+        const valid = hash === raw.hash;
+
+        document.getElementById("output").textContent =
+            "✔ Hash gültig: " + valid + "\n\n" +
+            JSON.stringify(JSON.parse(json), null, 2);
+
+    } catch (e) {
+        document.getElementById("output").textContent =
+            "❌ Fehler beim Decrypt:\n" + e;
+    }
+}
+</script>
+
+</body>
+</html>
